@@ -134,3 +134,4 @@ C:\BestStoreMVC1\obj\Debug\net8.0\refint\BestStoreMVC1.dll
 C:\BestStoreMVC1\obj\Debug\net8.0\BestStoreMVC1.pdb
 C:\BestStoreMVC1\obj\Debug\net8.0\BestStoreMVC1.genruntimeconfig.cache
 C:\BestStoreMVC1\obj\Debug\net8.0\ref\BestStoreMVC1.dll
+C:\BestStoreMVC1\obj\Debug\net8.0\BestStoreMVC1.sourcelink.json

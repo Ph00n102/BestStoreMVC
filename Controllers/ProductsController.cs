@@ -12,10 +12,11 @@ namespace BestStoreMVC1.Controllers
     {
         private readonly ApplicationDbContext context;
         private readonly IWebHostEnvironment environment;
-
+        
         public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             this.context = context;
+            this.environment = environment;
         }
 
         public IActionResult Index()
@@ -28,27 +29,31 @@ namespace BestStoreMVC1.Controllers
         {
             return View();
         }
+
         [HttpPost]
         public IActionResult Create(ProductDto productDto)
         {
             if (productDto.ImageFile == null)
             {
-                ModelState.AddModelError("ImageFile","The image file is required");
+                ModelState.AddModelError("ImageFile", "The image file is required");
             }
-            if(!ModelState.IsValid)
+
+            if (!ModelState.IsValid)
             {
                 return View(productDto);
             }
 
+            // save the image file
             string newFileName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
             newFileName += Path.GetExtension(productDto.ImageFile!.FileName);
 
             string imageFullPath = environment.WebRootPath + "/products/" + newFileName;
-            using (var stream = System.ID.File.Create(imageFullPath))
+            using (var stream = System.IO.File.Create(imageFullPath))
             {
                 productDto.ImageFile.CopyTo(stream);
             }
 
+            // save the new product in the database
             Product product = new Product()
             {
                 Name = productDto.Name,
@@ -62,18 +67,21 @@ namespace BestStoreMVC1.Controllers
             };
 
             context.Products.Add(product);
-            context.SaveChanges();
+            context.SaveChangesAsync();
 
-            return RedirectToAction("Index","Products");
+            return RedirectToAction("Index", "Products");
         }
 
         public IActionResult Edit(int id)
         {
             var product = context.Products.Find(id);
+
             if (product == null)
             {
                 return RedirectToAction("Index", "Products");
             }
+
+            // create productDto from product
             var productDto = new ProductDto()
             {
                 Name = product.Name,
@@ -82,10 +90,11 @@ namespace BestStoreMVC1.Controllers
                 Price = product.Price,
                 Description = product.Description,
             };
+
             ViewData["ProductId"] = product.Id;
             ViewData["ImageFileName"] = product.ImageFileName;
             ViewData["CreatedAt"] = product.CreatedAt.ToString("MM/dd/yyyy");
-            
+
             return View(productDto);
         }
 
@@ -93,18 +102,22 @@ namespace BestStoreMVC1.Controllers
         public IActionResult Edit(int id, ProductDto productDto)
         {
             var product = context.Products.Find(id);
+
             if (product == null)
             {
                 return RedirectToAction("Index", "Products");
             }
-            if(!ModelState.IsValid)
+
+            if (!ModelState.IsValid)
             {
                 ViewData["ProductId"] = product.Id;
                 ViewData["ImageFileName"] = product.ImageFileName;
                 ViewData["CreatedAt"] = product.CreatedAt.ToString("MM/dd/yyyy");
+
                 return View(productDto);
             }
 
+            // update the image file if we have a new image file
             string newFileName = product.ImageFileName;
             if (productDto.ImageFile != null)
             {
@@ -112,14 +125,17 @@ namespace BestStoreMVC1.Controllers
                 newFileName += Path.GetExtension(productDto.ImageFile.FileName);
 
                 string imageFullPath = environment.WebRootPath + "/products/" + newFileName;
-                using (var stream = System.ID.File.Create(imageFullPath))
+                using (var stream = System.IO.File.Create(imageFullPath))
                 {
                     productDto.ImageFile.CopyTo(stream);
-                } 
+                }
+
+                // delete the old image
                 string oldImageFullPath = environment.WebRootPath + "/products/" + product.ImageFileName;
-                System.ID.File.Delete(oldImageFullPath);
+                System.IO.File.Delete(oldImageFullPath);
             }
 
+            // update the product in the database
             product.Name = productDto.Name;
             product.Brand = productDto.Brand;
             product.Category = productDto.Category;
@@ -128,19 +144,24 @@ namespace BestStoreMVC1.Controllers
             product.ImageFileName = newFileName;
 
             context.SaveChanges();
+
             return RedirectToAction("Index", "Products");
         }
+
         public IActionResult Delete(int id)
         {
             var product = context.Products.Find(id);
-            if(product == null)
+            if (product == null)
             {
                 return RedirectToAction("Index", "Products");
             }
+
             string imageFullPath = environment.WebRootPath + "/products/" + product.ImageFileName;
-            System.ID.File.Delete(imageFullPath);
+            System.IO.File.Delete(imageFullPath);
+
             context.Products.Remove(product);
             context.SaveChanges(true);
+
             return RedirectToAction("Index", "Products");
         }
     }
